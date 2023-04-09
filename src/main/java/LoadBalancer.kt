@@ -1,0 +1,4 @@
+class LoadBalancer {
+
+    fun get() {}
+}
