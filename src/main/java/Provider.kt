@@ -1,7 +1,6 @@
 import java.util.*
 
-class Provider {
-    private val ID = UUID.randomUUID().toString()
+class Provider(private val id: String = UUID.randomUUID().toString()) {
 
-    fun get(): String = ID
+    fun get() = id
 }

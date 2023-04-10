@@ -13,6 +13,7 @@
         <kotlin.version>1.8.20</kotlin.version>
 
         <junit-jupiter-api.version>5.9.2</junit-jupiter-api.version>
+        <mockk.version>1.9.3</mockk.version>
     </properties>
 
     <dependencyManagement>
@@ -35,6 +36,12 @@
                 <version>${junit-jupiter-api.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>io.mockk</groupId>
+                <artifactId>mockk</artifactId>
+                <version>${mockk.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -52,6 +59,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
