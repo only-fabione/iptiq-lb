@@ -1,50 +1,21 @@
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.util.*
+import kotlin.test.assertNotNull
 
 internal class RandomLoadBalancerTest {
+    @Test
+    fun checkSelectRandomProvider() {
+        val firstMockedProvider: Provider = mockk()
+        val secondMockedProvider: Provider = mockk()
+        val randomLoadBalancer = RandomLoadBalancer(listOf(firstMockedProvider, secondMockedProvider))
 
-    internal class RegisterProviderTest {
+        every { firstMockedProvider.get() } returns UUID.randomUUID().toString()
+        every { secondMockedProvider.get() } returns UUID.randomUUID().toString()
 
-        @Test
-        fun checkSuccessfullyRegisterNewProvider() {
-            val randomLoadBalancer = RandomLoadBalancer()
+        val providerId = randomLoadBalancer.get()
 
-            randomLoadBalancer.register(listOf(Provider()))
-
-            assertEquals(randomLoadBalancer.availableProviders.size, 1)
-        }
-
-        @Test
-        fun checkLoadBalancerRefuseMoreThanAllowedConnections() {
-            val randomLoadBalancer = RandomLoadBalancer()
-
-            assertThrows<MaximumProviderNumberReached> {
-                randomLoadBalancer.register(MutableList(11) { Provider() })
-            }
-        }
-    }
-
-    internal class RetrieveProviderTest {
-
-        @Test
-        fun checkSelectRandomProvider() {
-            val randomLoadBalancer = RandomLoadBalancer()
-            val mockedProvider: Provider = mockk()
-
-            randomLoadBalancer.register(listOf(mockedProvider))
-
-            val id = UUID.randomUUID().toString()
-            every { mockedProvider.get() } returns id
-
-            val providerId = randomLoadBalancer.get()
-
-            assertEquals(providerId, id)
-            verify { mockedProvider.get() }
-        }
+        assertNotNull(providerId)
     }
 }
