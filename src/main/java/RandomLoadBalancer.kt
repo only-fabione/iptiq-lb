@@ -1,4 +1,4 @@
-class RandomLoadBalancer(availableProviders: List<Provider>) : LoadBalancer(availableProviders) {
+class RandomLoadBalancer(availableProviders: MutableList<Provider>) : LoadBalancer(availableProviders) {
 
     override fun get() = availableProviders.random().get()
 }

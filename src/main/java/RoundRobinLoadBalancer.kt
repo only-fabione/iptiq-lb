@@ -1,4 +1,4 @@
-class RoundRobinLoadBalancer(availableProviders: List<Provider>) : LoadBalancer(availableProviders) {
+class RoundRobinLoadBalancer(availableProviders: MutableList<Provider>) : LoadBalancer(availableProviders) {
     private var availableProvidersIterator: ListIterator<Provider> = availableProviders.listIterator()
 
     override fun get(): String {

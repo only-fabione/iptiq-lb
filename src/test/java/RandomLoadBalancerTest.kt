@@ -9,7 +9,7 @@ internal class RandomLoadBalancerTest {
     fun checkSelectRandomProvider() {
         val firstMockedProvider: Provider = mockk()
         val secondMockedProvider: Provider = mockk()
-        val randomLoadBalancer = RandomLoadBalancer(listOf(firstMockedProvider, secondMockedProvider))
+        val randomLoadBalancer = RandomLoadBalancer(mutableListOf(firstMockedProvider, secondMockedProvider))
 
         every { firstMockedProvider.get() } returns UUID.randomUUID().toString()
         every { secondMockedProvider.get() } returns UUID.randomUUID().toString()

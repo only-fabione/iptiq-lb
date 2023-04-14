@@ -1,4 +1,4 @@
-abstract class LoadBalancer(val availableProviders: List<Provider>) : ProviderIdRetriever {
+abstract class LoadBalancer(val availableProviders: MutableList<Provider>) : ProviderIdRetriever, ProviderRegistration {
 
     init {
         require(availableProviders.isNotEmpty()) { "Failed precondition: the load balancer must have at least one provider to distribute requests" }
@@ -7,5 +7,13 @@ abstract class LoadBalancer(val availableProviders: List<Provider>) : ProviderId
 
     companion object {
         private const val MAXIMUM_PROVIDERS_ALLOWED = 10
+    }
+
+    override fun include(provider: Provider) {
+        availableProviders.add(provider)
+    }
+
+    override fun exclude(provider: Provider) {
+        availableProviders.remove(provider)
     }
 }
