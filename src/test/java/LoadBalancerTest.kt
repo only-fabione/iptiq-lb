@@ -1,29 +1,33 @@
-import org.junit.jupiter.api.Assertions.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.lang.IllegalArgumentException
+import java.lang.Thread.sleep
 
 internal class LoadBalancerTest {
 
     internal class LoadBalancerConnectionTest {
         @Test
         fun checkSuccessfullyRegisterNewProvider() {
-            val randomLoadBalancer = RandomLoadBalancer(mutableListOf(Provider()))
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(Provider()))
 
-            assertEquals(randomLoadBalancer.availableProviders.size, 1)
+            assertEquals(loadBalancer.availableProviders.size, 1)
         }
 
         @Test
         fun checkLoadBalancerRefuseMoreThanAllowedConnections() {
             assertThrows<IllegalArgumentException>("Maximum provider number reached") {
-                RandomLoadBalancer(MutableList(11) { Provider() })
+                RandomLoadBalancer(List(11) { Provider() }.toMutableSet())
             }
         }
 
         @Test
         fun checkLoadBalancerRefuseNoConnection() {
             assertThrows<IllegalArgumentException>("Failed precondition: the load balancer must have at least one provider to distribute requests") {
-                RandomLoadBalancer(mutableListOf())
+                RandomLoadBalancer(mutableSetOf())
             }
         }
     }
@@ -32,32 +36,102 @@ internal class LoadBalancerTest {
         @Test
         fun checkSuccessfullyExcludeNewProvider() {
             val provider = Provider()
-            val randomLoadBalancer = RandomLoadBalancer(mutableListOf(provider))
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(provider))
 
-            randomLoadBalancer.exclude(provider)
+            loadBalancer.exclude(provider)
 
-            assertTrue(randomLoadBalancer.availableProviders.isEmpty())
+            assertTrue(loadBalancer.availableProviders.isEmpty())
         }
 
         @Test
         fun checkNotExcludeNotExistingProvider() {
-            val randomLoadBalancer = RandomLoadBalancer(mutableListOf(Provider()))
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(Provider()))
 
             val anotherProvider = Provider()
-            randomLoadBalancer.exclude(anotherProvider)
+            loadBalancer.exclude(anotherProvider)
 
-            assertEquals(randomLoadBalancer.availableProviders.size, 1)
+            assertEquals(loadBalancer.availableProviders.size, 1)
         }
 
         @Test
         fun checkSuccessfullyIncludeNewProvider() {
             val provider = Provider()
-            val randomLoadBalancer = RandomLoadBalancer(mutableListOf(provider))
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(provider))
 
             val anotherProvider = Provider()
-            randomLoadBalancer.include(anotherProvider)
+            loadBalancer.include(anotherProvider)
 
-            assertEquals(randomLoadBalancer.availableProviders.size, 2)
+            assertEquals(loadBalancer.availableProviders.size, 2)
         }
     }
+
+    internal class CheckProviderStatusTest {
+        @Test
+        fun checkSuccessfullyDisableNotActiveProvider() {
+            val activeProvider: Provider = mockk()
+            val disabledProvider: Provider = mockk()
+            val anotherDisabledProvider: Provider = mockk()
+
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
+
+            every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { disabledProvider.check() } returns HeartBeatStatus.DISABLED
+            every { anotherDisabledProvider.check() } returns HeartBeatStatus.DISABLED
+
+            loadBalancer.checkProviderStatus()
+            sleep(3000L)
+
+            assertEquals(loadBalancer.availableProviders.size, 1)
+            verify { activeProvider.check() }
+            verify { disabledProvider.check() }
+            verify { anotherDisabledProvider.check() }
+        }
+
+
+        @Test
+        fun checkSuccessfullyReintroduceActiveProvider() {
+            val activeProvider: Provider = mockk()
+            val disabledProvider: Provider = mockk()
+            val anotherDisabledProvider: Provider = mockk()
+
+            val loadBalancer = RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
+
+            every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { disabledProvider.check() } returns HeartBeatStatus.DISABLED
+            every { anotherDisabledProvider.check() } returns HeartBeatStatus.DISABLED
+
+            loadBalancer.checkProviderStatus()
+            sleep(3000L)
+
+            assertEquals(loadBalancer.availableProviders.size, 1)
+            verify { activeProvider.check() }
+            verify { disabledProvider.check() }
+            verify { anotherDisabledProvider.check() }
+
+            every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { disabledProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { anotherDisabledProvider.check() } returns HeartBeatStatus.DISABLED
+
+            loadBalancer.checkProviderStatus()
+            sleep(3000L)
+
+            assertEquals(loadBalancer.availableProviders.size, 1)
+            verify { activeProvider.check() }
+            verify { disabledProvider.check() }
+            verify { anotherDisabledProvider.check() }
+
+            every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { disabledProvider.check() } returns HeartBeatStatus.ACTIVE
+            every { anotherDisabledProvider.check() } returns HeartBeatStatus.DISABLED
+
+            loadBalancer.checkProviderStatus()
+            sleep(3000L)
+
+            assertEquals(loadBalancer.availableProviders.size, 2)
+            verify { activeProvider.check() }
+            verify { disabledProvider.check() }
+            verify { anotherDisabledProvider.check() }
+        }
+    }
+
 }

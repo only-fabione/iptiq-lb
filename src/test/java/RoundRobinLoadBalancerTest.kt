@@ -8,7 +8,7 @@ internal class RoundRobinLoadBalancerTest {
         val firstProvider = Provider()
         val secondProvider = Provider()
 
-        val loadBalancer = RoundRobinLoadBalancer(mutableListOf(firstProvider, secondProvider))
+        val loadBalancer = RoundRobinLoadBalancer(mutableSetOf(firstProvider, secondProvider))
 
         assertEquals(loadBalancer.get(), firstProvider.get())
         assertEquals(loadBalancer.get(), secondProvider.get())

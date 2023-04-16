@@ -29,4 +29,19 @@ internal class ProviderTest {
 
         assertNotEquals(firstProvider.get(), secondProvider.get())
     }
+
+    @Test
+    fun checkDefaultActiveProviderStatus() {
+        val provider = Provider()
+
+        assertEquals(provider.check(), HeartBeatStatus.ACTIVE)
+    }
+
+    @Test
+    fun checkRetrieveProviderStatus() {
+        val status = HeartBeatStatus.DISABLED
+        val provider = Provider(status = status)
+
+        assertEquals(provider.check(), status)
+    }
 }
