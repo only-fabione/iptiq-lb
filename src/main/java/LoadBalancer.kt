@@ -1,9 +1,19 @@
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.Timer
+import java.util.concurrent.Semaphore
 import kotlin.concurrent.scheduleAtFixedRate
+
+private const val MAXIMUM_PROVIDERS_ALLOWED = 10
+private const val MAXIMUM_PARALLELISM_ALLOWED = 5
+private const val HEART_BEAT_CHECK_INTERVAL = 60000L
 
 abstract class LoadBalancer(
     val availableProviders: MutableSet<Provider>,
-    private val timer: Timer = Timer()
+    private val timer: Timer = Timer(),
+    private val semaphore: Semaphore = Semaphore(MAXIMUM_PARALLELISM_ALLOWED * availableProviders.size),
+    private val mutex: Mutex = Mutex()
 ) : ProviderIdRetriever, ProviderRegistration {
 
     private val providerStatus: MutableMap<ProviderStatus, Set<Provider>> =
@@ -14,24 +24,37 @@ abstract class LoadBalancer(
         require(availableProviders.size <= MAXIMUM_PROVIDERS_ALLOWED) { "Maximum provider number reached" }
     }
 
-    companion object {
-        private const val MAXIMUM_PROVIDERS_ALLOWED = 10
+    abstract fun getProviderId(): String
+
+    override fun get(): String {
+        semaphore.acquire()
+        val providerId = getProviderId()
+        semaphore.release()
+        return providerId
     }
 
     override fun include(provider: Provider) {
-        availableProviders.add(provider)
+        synchronized(availableProviders) {
+            availableProviders.add(provider)
+        }
     }
 
     override fun exclude(provider: Provider) {
-        availableProviders.remove(provider)
+        synchronized(availableProviders) {
+            availableProviders.remove(provider)
+        }
     }
 
     fun checkProviderStatus() {
-        timer.scheduleAtFixedRate(
-            0L, 60000L
-        ) {
-            updateProviderStatus()
-            updateAvailableProviders()
+        runBlocking {
+            mutex.withLock {
+                timer.scheduleAtFixedRate(
+                    0L, HEART_BEAT_CHECK_INTERVAL
+                ) {
+                    updateProviderStatus()
+                    updateAvailableProviders()
+                }
+            }
         }
     }
 
@@ -55,8 +78,11 @@ abstract class LoadBalancer(
         }
 
     private fun updateAvailableProviders() {
-        availableProviders.retainAll(providerStatus.getOrDefault(ProviderStatus.ACTIVE, mutableSetOf()))
-        availableProviders.addAll(providerStatus.getOrDefault(ProviderStatus.ACTIVE, mutableSetOf()))
+        val updatedActiveProviders = providerStatus.getOrDefault(ProviderStatus.ACTIVE, mutableSetOf())
+        availableProviders.apply {
+            retainAll(updatedActiveProviders)
+            addAll(updatedActiveProviders)
+        }
     }
 
 }

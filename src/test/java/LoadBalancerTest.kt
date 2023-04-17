@@ -72,7 +72,8 @@ internal class LoadBalancerTest {
             val disabledProvider: Provider = mockk()
             val anotherDisabledProvider: Provider = mockk()
 
-            val loadBalancer = RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
+            val loadBalancer =
+                RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
 
             every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
             every { disabledProvider.check() } returns HeartBeatStatus.DISABLED
@@ -94,7 +95,8 @@ internal class LoadBalancerTest {
             val disabledProvider: Provider = mockk()
             val anotherDisabledProvider: Provider = mockk()
 
-            val loadBalancer = RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
+            val loadBalancer =
+                RandomLoadBalancer(mutableSetOf(activeProvider, disabledProvider, anotherDisabledProvider))
 
             every { activeProvider.check() } returns HeartBeatStatus.ACTIVE
             every { disabledProvider.check() } returns HeartBeatStatus.DISABLED
@@ -133,5 +135,4 @@ internal class LoadBalancerTest {
             verify { anotherDisabledProvider.check() }
         }
     }
-
 }
